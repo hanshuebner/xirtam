@@ -1,12 +1,56 @@
 ## Synopsis
 
-SmallyMouse2 is the AT90USB1287 firmware source code and KiCAD schematic/PCB design for the SmallyMouse2 project.
+xirtam is a an interface device to connect a USB keyboard to a computer with a
+matrix keyboard interface, i.e. an 8 bit home computer.
+
+The repository contains the AT90USB1287 firmware source code and KiCAD schematic/PCB
+design for the xirtam project.  It is a fork of the [SmallyMouse2](https://www.waitingforfriday.com/?p=827)
+project that implements a similar device for realy computer mice.
 
 ## Motivation
 
-SmallyMouse2 is a project that creates a USB mouse adaptor for retro computers that use quadrature mouse input including the Acorn BBC Micro, Acorn Master series, Commodore Amiga, Atari ST, busmouse compatible computers and many more.  SmallyMouse2 provides both a generic mouse output header (for attaching mouse to retro computer cables) and an IDC connector suitable for use with Acorn 8-bit user-ports.  SmallyMouse2 also features a configurable quadrature rate limiter that prevents VIA overrun when in use with slower 8-bit machines.
+8 bit home computers interface to their keyboard through a matrix style interface.
+The main CPU periodically scans the keyboard matrix for key presses converts them to
+characters or control information as required.  This is in contrast to more modern
+machines, where a separate microcontroller performs the keyboard scanning task and
+interfaces to the main CPU using a serial interface.
 
-SmallyMouse2 supports both JTAG and USB bootloader programming.  The AT90USB1287 is pre-programmed by Atmel with the (FLIP) DFU bootloader; this bootloader is recognised by Atmel Studio as a programming device and can be used to flash the firmware to the board.
+Being able to use an USB interface with an 8 bit home computer is often desireable
+because of the bad quality that home computer keyboards typically have. Some don't
+even have physical keys, but most use cheap mechanical switches.  Furthermore, the
+keyboard is always integrated into the system unit, and a detachable keyboard is
+much desireable.
+
+## Implementation
+
+Interfacing a modern keyboard to a computer with a matrix interface is slightly
+tricky because of the way how the scanning is typically implemented.  The keyboard
+is organized as a matrix of switches, with each switch connecting a particular pair
+of a vertical and horizontal line of the matrix.  It does so by sending a high 
+signal to one of the row lines of the matrix, and then reading back the
+value sent by the keyboard on the column lines.  For each key pressed in the
+particular row, the respective column bit will be high.
+
+The scanning of the keyboard is a rapid process, with little time between when the
+row was selected and the column being read.  Typically, there will only be a few
+hundred nanoseconds between when the CPU selects a row and when it reads back the
+column data.  Hence, software based solutions to emulate a keyboard matrix, while
+they exist, require a very fast microcontroller or additional hardware or software
+running on the micro to work.
+
+xirtam approaches the timing problem by using a matrix switch chip that works
+the same way as a physical keyboard.  Matrix switch chips are used in video and
+audio crossbar applications and have been around for a long time.  They are
+available in various configurations and sizes and are reasonably priced.  The
+particular family of chips chosen for xirtam is is made by Zarlink (now 
+Microchip).  They provide an easy to use interface for control, 
+allowing the microcontroller to address one of the switches on a parallel address
+bus and sending the desired switch state on a separate data bit.
+
+xirtam supports both JTAG and USB bootloader programming.  The AT90USB1287 
+is pre-programmed by Atmel with the (FLIP) DFU bootloader; this bootloader is 
+recognised by Atmel Studio as a programming device and can be used to flash the 
+firmware to the board.
 
 ## Installation
 
@@ -14,9 +58,10 @@ Note: This is an Atmel Studio 7 project that can be loaded and compiled by the I
 
 Please see http://www.waitingforfriday.com/?p=827 for detailed documentation about SmallyMouse2
 
-## Author
+## Authors
 
-SmallyMouse2 is written and maintained by Simon Inns.
+SmallyMouse2 was written and maintained by Simon Inns.  It was adapted to xirtam
+by Hans Hübner.
 
 ## License (Software)
 
@@ -35,4 +80,10 @@ SmallyMouse2 is written and maintained by Simon Inns.
 
 ## License (Hardware)
 
-Both the schematic and the PCB design of SmallyMouse2 (i.e. the KiCAD project and files) are covered by a Creative Commons license; as with the software you are welcome (and encouraged!) to extend, re-spin and otherwise use and modify the design as allowed by the license.  However; under the terms of the Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) license you are required to release your design (or redesign) under the same license.  For details of the licensing requirements please see <https://creativecommons.org/licenses/by-sa/4.0/>
+Both the schematic and the PCB design of xirtam (i.e. the KiCAD project and files)
+are covered by a Creative Commons license; as with the software you are welcome 
+(and encouraged!) to extend, re-spin and otherwise use and modify the design as 
+allowed by the license.  However; under the terms of the Attribution-ShareAlike 
+4.0 International (CC BY-SA 4.0) license you are required to release your design 
+5.(or redesign) under the same license.  For details of the licensing requirements 
+6.please see <https://creativecommons.org/licenses/by-sa/4.0/>
