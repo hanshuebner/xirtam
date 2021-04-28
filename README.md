@@ -68,7 +68,7 @@ Please see http://www.waitingforfriday.com/?p=827 for detailed documentation abo
 
 ## Authors
 
-SmallyMouse2 was written and maintained by Simon Inns.  It was adapted to xirtam
+SmallyMouse2 was written and is maintained by Simon Inns.  It was adapted to xirtam
 by Hans Hübner.
 
 ## License (Software)
