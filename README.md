@@ -39,11 +39,19 @@ they exist, require a very fast microcontroller or additional hardware or softwa
 running on the micro to work.
 
 xirtam approaches the timing problem by using a matrix switch chip that works
-the same way as a physical keyboard.  Matrix switch chips are used in video and
+the same way as a physical keyboard.  The physical switches of the keyboard are
+replaced by semiconductor switches inside of the chip which can be controlled
+by a host interface.  When one of the switches is turned on by the host, it
+connects the row and column at its intersection until the host turns if off again.
+Hence, the scanning of the keyboard by the home computer can be done at arbitrary
+rate, like with a physical keyboard.
+
+Matrix switch chips are used in video and
 audio crossbar applications and have been around for a long time.  They are
 available in various configurations and sizes and are reasonably priced.  The
-particular family of chips chosen for xirtam is is made by Zarlink (now 
-Microchip).  They provide an easy to use interface for control, 
+chip chosen for xirtam is the [MT093](https://www.microsemi.com/document-portal/doc_download/127014-mt093-datasheet-sept11).  
+It was developed by Zarlink (now Microchip) and provides for 96 switches in an 
+8x12 configuration.  It provides an easy to use interface for control, 
 allowing the microcontroller to address one of the switches on a parallel address
 bus and sending the desired switch state on a separate data bit.
 
