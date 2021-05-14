@@ -920,7 +920,7 @@ F 3 "~" H 8550 1200 50  0001 C CNN
 	1    8550 1200
 	1    0    0    -1  
 $EndComp
-Text GLabel 8950 1300 2    60   Input ~ 0
+Text GLabel 8950 1100 2    60   Input ~ 0
 ~RESET
 $Comp
 L power:GND #PWR012
@@ -938,8 +938,8 @@ Wire Wire Line
 Wire Wire Line
 	8200 1200 8350 1200
 Wire Wire Line
-	8750 1300 8950 1300
-NoConn ~ 8750 1100
+	8750 1100 8950 1100
+NoConn ~ 8750 1300
 NoConn ~ 5800 2400
 NoConn ~ 5800 2200
 NoConn ~ 5800 2100
