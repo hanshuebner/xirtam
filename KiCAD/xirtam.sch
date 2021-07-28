@@ -4,7 +4,7 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 1
-Title "xirtam"
+Title "xirtam TI-99/4A"
 Date "2017-02-16"
 Rev "2.0"
 Comp "https://netzhansa.com"
@@ -351,40 +351,6 @@ Wire Wire Line
 NoConn ~ 5800 2500
 NoConn ~ 5800 2600
 NoConn ~ 5800 2700
-Wire Wire Line
-	5800 4700 6100 4700
-Wire Wire Line
-	5800 4800 6100 4800
-Wire Wire Line
-	5800 4900 6100 4900
-Wire Wire Line
-	5800 5000 6100 5000
-Wire Wire Line
-	5800 5100 6100 5100
-Wire Wire Line
-	5800 5200 6100 5200
-Wire Wire Line
-	5800 5300 6100 5300
-Wire Wire Line
-	5800 5400 6100 5400
-$Comp
-L power:+5V #PWR013
-U 1 1 590F1572
-P 6700 5550
-F 0 "#PWR013" H 6700 5400 50  0001 C CNN
-F 1 "+5V" H 6700 5690 50  0000 C CNN
-F 2 "" H 6700 5550 50  0000 C CNN
-F 3 "" H 6700 5550 50  0000 C CNN
-	1    6700 5550
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	6100 5600 6050 5600
-Wire Wire Line
-	6100 5500 5950 5500
-Wire Wire Line
-	5950 5500 5950 5800
-Connection ~ 4600 5800
 NoConn ~ 5800 3100
 NoConn ~ 5800 3200
 NoConn ~ 5800 3300
@@ -558,8 +524,6 @@ Wire Wire Line
 Wire Wire Line
 	2950 3400 3100 3400
 Wire Wire Line
-	4600 5800 5950 5800
-Wire Wire Line
 	4500 6950 4800 6950
 Wire Wire Line
 	4500 6450 4800 6450
@@ -594,12 +558,6 @@ Wire Wire Line
 	7400 4400 5800 4400
 Wire Wire Line
 	5800 4500 7400 4500
-Wire Wire Line
-	6050 5600 6050 5800
-Wire Wire Line
-	6050 5800 6700 5800
-Wire Wire Line
-	6700 5800 6700 5550
 Wire Wire Line
 	5800 2900 6750 2900
 Wire Wire Line
@@ -703,57 +661,6 @@ F 3 "" H 8100 4950 50  0000 C CNN
 $EndComp
 Wire Wire Line
 	8100 4750 8100 4950
-$Comp
-L Connector:Conn_01x20_Male J2
-U 1 1 60989A86
-P 9850 3600
-F 0 "J2" H 9822 3574 50  0000 R CNN
-F 1 "Matrix" H 9822 3483 50  0000 R CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x20_P2.54mm_Horizontal" H 9850 3600 50  0001 C CNN
-F 3 "~" H 9850 3600 50  0001 C CNN
-	1    9850 3600
-	-1   0    0    1   
-$EndComp
-Wire Wire Line
-	8800 2600 9650 2600
-Wire Wire Line
-	9650 2700 8800 2700
-Wire Wire Line
-	8800 2800 9650 2800
-Wire Wire Line
-	9650 2900 8800 2900
-Wire Wire Line
-	8800 3000 9650 3000
-Wire Wire Line
-	9650 3100 8800 3100
-Wire Wire Line
-	8800 3200 9650 3200
-Wire Wire Line
-	9650 3300 8800 3300
-Wire Wire Line
-	8800 3400 9650 3400
-Wire Wire Line
-	9650 3500 8800 3500
-Wire Wire Line
-	8800 3600 9650 3600
-Wire Wire Line
-	9650 3700 8800 3700
-Wire Wire Line
-	8800 3800 9650 3800
-Wire Wire Line
-	9650 3900 8800 3900
-Wire Wire Line
-	8800 4000 9650 4000
-Wire Wire Line
-	9650 4100 8800 4100
-Wire Wire Line
-	8800 4200 9650 4200
-Wire Wire Line
-	9650 4300 8800 4300
-Wire Wire Line
-	8800 4400 9650 4400
-Wire Wire Line
-	9650 4500 8800 4500
 Text GLabel 6400 1100 0    60   Input ~ 0
 TCK
 Text GLabel 6400 1200 0    60   Input ~ 0
@@ -944,16 +851,174 @@ NoConn ~ 5800 2400
 NoConn ~ 5800 2200
 NoConn ~ 5800 2100
 NoConn ~ 5800 2000
-NoConn ~ 5200 5100
 $Comp
-L xirtam-rescue:CONN_01X10 J1
-U 1 1 590F0D71
-P 6300 5150
-F 0 "J1" H 6300 5700 50  0000 C CNN
-F 1 "Exp Header" V 6400 5150 50  0000 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x10_P2.54mm_Horizontal" H 6300 5150 50  0001 C CNN
-F 3 "" H 6300 5150 50  0001 C CNN
-	1    6300 5150
-	1    0    0    1   
+L Connector:Conn_01x15_Female J1
+U 1 1 60DE32D9
+P 10000 5050
+F 0 "J1" V 10073 5030 50  0000 C CNN
+F 1 "Conn_01x15_Female" V 10164 5030 50  0000 C CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x15_P2.54mm_Horizontal" H 10000 5050 50  0001 C CNN
+F 3 "~" H 10000 5050 50  0001 C CNN
+	1    10000 5050
+	0    1    1    0   
 $EndComp
+NoConn ~ 5800 4700
+NoConn ~ 5800 4800
+NoConn ~ 5800 4900
+NoConn ~ 5800 5000
+NoConn ~ 5800 5100
+NoConn ~ 5800 5200
+NoConn ~ 5800 5300
+NoConn ~ 5800 5400
+Text Notes 10700 2300 1    60   ~ 0
+INT5
+Text Notes 10600 2300 1    60   ~ 0
+INT6
+Text Notes 10500 2300 1    60   ~ 0
+INT8
+Text Notes 10400 2300 1    60   ~ 0
+INT4
+Text Notes 10300 2300 1    60   ~ 0
+INT3
+Text Notes 10200 2300 1    60   ~ 0
+P5
+Text Notes 10100 2300 1    60   ~ 0
+INT7
+Text Notes 10000 2300 1    60   ~ 0
+1Y1
+Text Notes 9900 2300 1    60   ~ 0
+1Y0
+Text Notes 9800 2300 1    60   ~ 0
+INT9
+Text Notes 9700 2300 1    60   ~ 0
+INT10
+Text Notes 9600 2300 1    60   ~ 0
+2Y0
+Text Notes 9500 2300 1    60   ~ 0
+2Y1
+Text Notes 9400 2300 1    60   ~ 0
+2Y2
+Text Notes 9300 2300 1    60   ~ 0
+2Y3
+$Comp
+L Connector:Conn_01x15_Male J2
+U 1 1 60EDF4D7
+P 10000 1900
+F 0 "J2" V 9835 1878 50  0000 C CNN
+F 1 "Conn_01x15_Male" V 9926 1878 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x15_P2.54mm_Horizontal" H 10000 1900 50  0001 C CNN
+F 3 "~" H 10000 1900 50  0001 C CNN
+	1    10000 1900
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	10100 2100 10100 2600
+Wire Wire Line
+	10600 2100 10600 3300
+Wire Wire Line
+	10200 2100 10200 4000
+Wire Wire Line
+	9600 2100 9600 3700
+Wire Wire Line
+	9500 2100 9500 3600
+Wire Wire Line
+	9400 2100 9400 3500
+Wire Wire Line
+	10300 2100 10300 3000
+Wire Wire Line
+	9800 2100 9800 2700
+Wire Wire Line
+	9700 2100 9700 2800
+Wire Wire Line
+	10700 2100 10700 2900
+Wire Wire Line
+	10400 2100 10400 3100
+Wire Wire Line
+	10500 2100 10500 3200
+Wire Wire Line
+	10000 2100 10000 3900
+Wire Wire Line
+	9900 2100 9900 3800
+Wire Wire Line
+	9300 2100 9300 3400
+Wire Wire Line
+	8800 2900 10700 2900
+Connection ~ 10700 2900
+Wire Wire Line
+	10700 2900 10700 4850
+Wire Wire Line
+	8800 3300 10600 3300
+Connection ~ 10600 3300
+Wire Wire Line
+	10600 3300 10600 4850
+Wire Wire Line
+	8800 3200 10500 3200
+Connection ~ 10500 3200
+Wire Wire Line
+	10500 3200 10500 4850
+Wire Wire Line
+	8800 3100 10400 3100
+Connection ~ 10400 3100
+Wire Wire Line
+	10400 3100 10400 4850
+Wire Wire Line
+	8800 3000 10300 3000
+Connection ~ 10300 3000
+Wire Wire Line
+	10300 3000 10300 4850
+Wire Wire Line
+	8800 2600 10100 2600
+Connection ~ 10100 2600
+Wire Wire Line
+	10100 2600 10100 4850
+Wire Wire Line
+	8800 2700 9800 2700
+Connection ~ 9800 2700
+Wire Wire Line
+	9800 2700 9800 4850
+Wire Wire Line
+	8800 2800 9700 2800
+Connection ~ 9700 2800
+Wire Wire Line
+	9700 2800 9700 4850
+Wire Wire Line
+	8800 4000 10200 4000
+Connection ~ 10200 4000
+Wire Wire Line
+	10200 4000 10200 4850
+Wire Wire Line
+	8800 3900 10000 3900
+Connection ~ 10000 3900
+Wire Wire Line
+	10000 3900 10000 4850
+Wire Wire Line
+	8800 3800 9900 3800
+Connection ~ 9900 3800
+Wire Wire Line
+	9900 3800 9900 4850
+Wire Wire Line
+	8800 3700 9600 3700
+Connection ~ 9600 3700
+Wire Wire Line
+	9600 3700 9600 4850
+Wire Wire Line
+	8800 3600 9500 3600
+Connection ~ 9500 3600
+Wire Wire Line
+	9500 3600 9500 4850
+Wire Wire Line
+	8800 3500 9400 3500
+Connection ~ 9400 3500
+Wire Wire Line
+	9400 3500 9400 4850
+Wire Wire Line
+	8800 3400 9300 3400
+Connection ~ 9300 3400
+Wire Wire Line
+	9300 3400 9300 4850
+NoConn ~ 8800 4100
+NoConn ~ 8800 4200
+NoConn ~ 8800 4300
+NoConn ~ 8800 4400
+NoConn ~ 8800 4500
 $EndSCHEMATC
