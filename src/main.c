@@ -55,6 +55,9 @@
 #include <LUFA/Platform/Platform.h>
 
 #include "ConfigDescriptor.h"
+
+#include "usb_hid_keys.h"
+#include "bit_array.h"
 #include "main.h"
 
 // Main function
