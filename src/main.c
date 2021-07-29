@@ -57,12 +57,151 @@
 #include "ConfigDescriptor.h"
 
 #include "usb_hid_keys.h"
-#include "bit_array.h"
 #include "main.h"
+
+// MT093 hardware interface
+
+#define BIT_STROBE 0x01
+#define BIT_DATA   0x02
+#define BIT_TXD    0x08
+#define BIT_RESET  0x10
+
+// Matrix definition
+
+#define MATRIX_ROWS 7
+#define MATRIX_COLUMNS 8
+
+#define MATRIX_COUNT (MATRIX_ROWS * MATRIX_COLUMNS)
+
+// Mapping from USB HID keyboard codes to matrix addresses
+
+typedef struct {
+  uint8_t row;
+  uint8_t column;
+} matrix_address_t;
+
+#define MATRIX(r, c) { .row = r, .column = c }
+
+typedef struct {
+  uint8_t input_code;
+  matrix_address_t matrix_address1, matrix_address2;
+} key_map_t;
+
+#define MAP(code, row, column) { code, MATRIX(row, column), MATRIX(row, column) }
+#define MAP2(code, row1, column1, row2, column2) { code, MATRIX(row1, column1), MATRIX(row2, column2) }
+
+#define LAST_MAP_ENTRY { .input_code = 0 }
+
+key_map_t modifier_map[] =
+  {
+   MAP(KEY_MOD_LCTRL, 3, 6),
+   MAP(KEY_MOD_LSHIFT, 3, 2),
+   MAP(KEY_MOD_LALT, 3, 5),
+   MAP(KEY_MOD_RCTRL, 3, 6),
+   MAP(KEY_MOD_RSHIFT, 3, 2),
+   MAP(KEY_MOD_RALT, 3, 5),
+   LAST_MAP_ENTRY
+  };
+
+key_map_t key_map[] =
+  {
+   MAP(KEY_A, 1, 2),
+   MAP(KEY_B, 2, 7),
+   MAP(KEY_C, 5, 7),
+   MAP(KEY_D, 5, 2),
+   MAP(KEY_E, 5, 6),
+   MAP(KEY_F, 6, 2),
+   MAP(KEY_G, 2, 2),
+   MAP(KEY_H, 2, 3),
+   MAP(KEY_I, 5, 0),
+   MAP(KEY_J, 6, 3),
+   MAP(KEY_K, 5, 3),
+   MAP(KEY_L, 4, 3),
+   MAP(KEY_M, 6, 4),
+   MAP(KEY_N, 2, 4),
+   MAP(KEY_O, 4, 0),
+   MAP(KEY_P, 1, 0),
+   MAP(KEY_Q, 1, 6),
+   MAP(KEY_R, 6, 6),
+   MAP(KEY_S, 4, 2),
+   MAP(KEY_T, 2, 6),
+   MAP(KEY_U, 6, 0),
+   MAP(KEY_V, 6, 7),
+   MAP(KEY_W, 4, 6),
+   MAP(KEY_X, 4, 7),
+   MAP(KEY_Y, 2, 0),
+   MAP(KEY_Z, 1, 7),
+   MAP(KEY_0, 1, 1),
+   MAP(KEY_1, 1, 5),
+   MAP(KEY_2, 4, 5),
+   MAP(KEY_3, 5, 5),
+   MAP(KEY_4, 6, 5),
+   MAP(KEY_5, 2, 5),
+   MAP(KEY_6, 2, 1),
+   MAP(KEY_7, 6, 1),
+   MAP(KEY_8, 5, 1),
+   MAP(KEY_9, 4, 1),
+   MAP(KEY_ENTER, 3, 0),
+   MAP(KEY_KPENTER, 3, 0),
+   MAP(KEY_EQUAL, 3, 4),
+   MAP(KEY_SPACE, 3, 3),
+   MAP(KEY_DOT, 4, 4),
+   MAP(KEY_COMMA, 5, 4),
+   MAP(KEY_SEMICOLON, 1, 3),
+   MAP(KEY_SLASH, 1, 4),
+   LAST_MAP_ENTRY
+  };
+
+void
+set_bit(BIT_ARRAY* bits, uint8_t row, uint8_t column) {
+  bit_array_set(bits, row * MATRIX_COLUMNS + column);
+}
+
+key_map_t*
+find_in_map(uint8_t input_code, key_map_t* map) {
+  for (int i = 0; map[i].input_code; i++) {
+    if (map[i].input_code == input_code) {
+      return &(map[i]);
+    }
+  }
+  return 0;
+}
+
+void
+map_code(BIT_ARRAY* bits, uint8_t code, key_map_t map[])
+{
+  key_map_t* map_entry = find_in_map(code, map);
+  if (map_entry) {
+    set_bit(bits, map_entry->matrix_address1.row, map_entry->matrix_address1.column);
+    set_bit(bits, map_entry->matrix_address2.row, map_entry->matrix_address2.column);
+  }
+}  
+
+void
+map_modifiers(BIT_ARRAY* bits, uint8_t modifier_mask)
+{
+  for (uint8_t i = 0; i < 8; i++) {
+    uint8_t code = 1 << i;
+    if (modifier_mask & code) {
+      map_code(bits, code, modifier_map);
+    }
+  }
+}
+
+void
+map_key(BIT_ARRAY* bits, uint8_t code) {
+  if (code > 1) {
+    map_code(bits, code, key_map);
+  }
+}
 
 // Main function
 int main(void)
 {
+  BIT_ARRAY* keyboard_state = bit_array_create(MATRIX_COUNT);
+
+  bit_array_clear_all(keyboard_state);
+
   // Initialise the hardware
   initialiseHardware();
 	
@@ -72,7 +211,7 @@ int main(void)
   // Main processing loop
   while(1) {
     // Perform any pending keyboard actions
-    processKeyboard();
+    processKeyboard(keyboard_state);
 
     // Process the USB host interface
     USB_USBTask();
@@ -89,54 +228,14 @@ void initialiseHardware(void)
   // Disable the clock divider (if set in fuses)
   clock_prescale_set(clock_div_1);
 
-  // Set the quadrature output pins to output
-  X1_DDR |= X1; // Output
-  X2_DDR |= X2; // Output
-  Y1_DDR |= Y1; // Output
-  Y2_DDR |= Y2; // Output
-	
-  // Set quadrature output pins to zero
-  X1_PORT &= ~X1; // Pin = 0
-  X2_PORT &= ~X2; // Pin = 0
-  Y1_PORT &= ~Y1; // Pin = 0
-  Y2_PORT &= ~Y2; // Pin = 0
-	
-  // Set mouse button output pins open drain
-  // (solves issues with some retro machines that
-  // don't like 5V to be sources from the pins)
-  LB_DDR &= ~LB; // 0 = input
-  MB_DDR &= ~MB; // 0 = input
-  RB_DDR &= ~RB; // 0 = input
-  LB_PORT &= ~LB; // Pin = 0 (off)
-  MB_PORT &= ~MB; // Pin = 0 (off)
-  RB_PORT &= ~RB; // Pin = 0 (off)
+  // Define the output pins
+  DDRC |= 0x7F; // Matrix address
+  DDRD |= BIT_STROBE | BIT_DATA | BIT_TXD | BIT_RESET;
 
-  // Set the rate limit configuration header to input
-  RATESW_DDR &= ~RATESW; // Input
-  RATESW_PORT |= RATESW; // Turn on weak pull-up
-	
-  // Configure E7 on the expansion header to act as
-  // DPISW (since it is easily jumpered to 0V)	
-  DPISW_DDR &= ~DPISW; // Input
-  DPISW_PORT |= DPISW; // Turn on weak pull-up
-	
-  // Initialise the expansion (Ian) header
-  E0_DDR |= ~E0; // Output
-  E1_DDR |= ~E1; // Output
-  E2_DDR |= ~E2; // Output
-  E3_DDR |= ~E3; // Output
-  E4_DDR |= ~E4; // Output
-  E5_DDR |= ~E5; // Output
-  E6_DDR |= ~E6; // Output
-	
-  E0_PORT &= ~E0; // Pin = 0
-  E1_PORT &= ~E1; // Pin = 0
-  E2_PORT &= ~E2; // Pin = 0
-  E3_PORT &= ~E3; // Pin = 0
-  E4_PORT &= ~E4; // Pin = 0
-  E5_PORT &= ~E5; // Pin = 0
-  E6_PORT &= ~E6; // Pin = 0
-	
+  // Reset the MT093 chip
+  PORTD |= BIT_RESET;
+  PORTD &= ~BIT_RESET;
+
   // Initialise the LUFA USB stack
   USB_Init();
 	
@@ -144,13 +243,11 @@ void initialiseHardware(void)
   // AVR's UART port.  You can monitor the debug console by
   // connecting a serial to USB adapter.  Only the Tx (D3 and 0V
   // pins are required).
-	
+
   // Initialise the serial UART - 9600 baud 8N1
   Serial_Init(9600, false);
 
   // Create a serial debug stream on stdio
-  // Note: The serial UART is available on the 
-  // expansion (Ian) header
   Serial_CreateStream(NULL);
 
   // Output some debug header information to the serial console
@@ -158,11 +255,49 @@ void initialiseHardware(void)
   puts_P(PSTR(ESC_FG_YELLOW "(c)2021 Hans Huebner\r\n" ESC_FG_WHITE));
 }
 
+void
+matrix_set(uint8_t row, uint8_t column, uint8_t value) {
+  printf_P(PSTR("%d/%d => %d\r\n"), row, column, value);
+  PORTC = (row << 4) | column;
+  if (value) {
+    PORTD |= BIT_DATA;
+  } else {
+    PORTD &= ~BIT_DATA;
+  }
+  PORTD |= BIT_STROBE;
+  PORTD &= ~BIT_STROBE;
+}
+
+void
+processReport(USB_KeyboardReport_Data_t* keyboard_report, BIT_ARRAY* old_state) {
+  BIT_ARRAY* new_state = bit_array_create(MATRIX_COUNT);
+  bit_array_clear_all(new_state);
+  bit_index_t next_bit_set = 0;
+
+  map_modifiers(new_state, keyboard_report->Modifier);
+  for (int i = 0; i < 6; i++) {
+    map_key(new_state, keyboard_report->KeyCode[i]);
+  }
+
+  bit_array_or(old_state, old_state, new_state);
+
+  while (bit_array_find_next_set_bit(old_state, next_bit_set, &next_bit_set)) {
+    uint8_t row = next_bit_set / MATRIX_COLUMNS;
+    uint8_t column = next_bit_set % MATRIX_COLUMNS;
+    matrix_set(row, column, bit_array_get_bit(new_state, next_bit_set));
+    if (++next_bit_set == MATRIX_COUNT) {
+      break;
+    }
+  }
+
+  bit_array_copy_all(old_state, new_state);
+
+  bit_array_free(new_state);
+}
+
 // Read the keyboard USB report and process the information
-void processKeyboard(void)
+void processKeyboard(BIT_ARRAY* old_state)
 {
-  USB_KeyboardReport_Data_t KeyboardReport;
-		
   // Only process the keyboard if it is attached to the USB port
   if (USB_HostState != HOST_STATE_Configured) {
     return;
@@ -183,14 +318,17 @@ void processKeyboard(void)
 
   // Ensure pipe is in the correct state before reading
   if (Pipe_IsReadWriteAllowed()) {
+    USB_KeyboardReport_Data_t keyboard_report;
 		
     // Read in keyboard report data
-    Pipe_Read_Stream_LE(&KeyboardReport, sizeof(KeyboardReport), NULL);
+    Pipe_Read_Stream_LE(&keyboard_report, sizeof(keyboard_report), NULL);
 
-    printf_P(PSTR("Keyboard report received - Modifier 0x%02X %d %d %d %d %d %d\r\n"),
-             KeyboardReport.Modifier,
-             KeyboardReport.KeyCode[0], KeyboardReport.KeyCode[1], KeyboardReport.KeyCode[2],
-             KeyboardReport.KeyCode[3], KeyboardReport.KeyCode[4], KeyboardReport.KeyCode[5]);
+    printf_P(PSTR("Mod 0x%02x Keys 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\r\n"),
+             keyboard_report.Modifier,
+             keyboard_report.KeyCode[0], keyboard_report.KeyCode[1], keyboard_report.KeyCode[2],
+             keyboard_report.KeyCode[3], keyboard_report.KeyCode[4], keyboard_report.KeyCode[5]);
+
+    processReport(&keyboard_report, old_state);
   }
 
   // Clear the IN endpoint, ready for next data packet
@@ -228,7 +366,7 @@ void EVENT_USB_Host_DeviceEnumerationComplete(void)
   if ((ErrorCode = ProcessConfigurationDescriptor()) != SuccessfulConfigRead) {
     if (ErrorCode == ControlError) {
       puts_P(PSTR(ESC_FG_RED "Control Error (Get configuration)!\r\n"));
-    } else {
+     } else {
       puts_P(PSTR(ESC_FG_RED "Invalid Device!\r\n"));
     }
 
