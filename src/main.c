@@ -237,6 +237,7 @@ void initialiseHardware(void)
 void
 matrix_set(uint8_t row, uint8_t column, uint8_t value) {
   printf_P(PSTR("%d/%d => %d\r\n"), row, column, value);
+
   PORTC = (row << 4) | column;
   if (value) {
     PORTD |= BIT_DATA;
@@ -420,7 +421,7 @@ int main(void)
   // Initialise the hardware
   initialiseHardware();
 
-  // Enable interrupts (required for USB support and quadrature output ISRs)
+  // Enable interrupts (required for USB support)
   sei();
 
   // Main processing loop
