@@ -168,6 +168,39 @@ key_map_t key_map[] =
    MAP(KEY_COMMA, 5, 4),
    MAP(KEY_SEMICOLON, 1, 3),
    MAP(KEY_SLASH, 1, 4),
+   MAP2(KEY_LEFT, 3, 7, 1, 2),
+   MAP2(KEY_RIGHT, 3, 7, 5, 2),
+   MAP2(KEY_UP, 3, 7, 5, 6),
+   MAP2(KEY_DOWN, 3, 7, 4, 7),
+   MAP2(KEY_BACKSLASH, 3, 7, 1, 7),
+   MAP2(KEY_GRAVE, 3, 7, 5, 7),
+   MAP2(KEY_LEFTBRACE, 3, 7, 6, 6),
+   MAP2(KEY_RIGHTBRACE, 3, 7, 2, 6),
+   MAP2(KEY_MINUS, 3, 7, 6, 0),
+   MAP2(KEY_APOSTROPHE, 3, 7, 4, 0),
+   MAP2(KEY_PAUSE, 3, 7, 3, 4),
+   MAP2(KEY_F1, 3, 7, 1, 5),
+   MAP2(KEY_F2, 3, 7, 4, 5),
+   MAP2(KEY_F3, 3, 7, 5, 5),
+   MAP2(KEY_F4, 3, 7, 6, 5),
+   MAP2(KEY_F5, 3, 7, 2, 5),
+   MAP2(KEY_F6, 3, 7, 2, 1),
+   MAP2(KEY_F7, 3, 7, 6, 1),
+   MAP2(KEY_F8, 3, 7, 5, 1),
+   MAP2(KEY_F9, 3, 7, 4, 1),
+   MAP2(KEY_F10, 3, 7, 1, 1),
+   LAST_MAP_ENTRY
+  };
+
+key_map_t shift_key_map[] =
+  {
+   MAP2(KEY_BACKSLASH, 3, 7, 1, 2),
+   MAP2(KEY_GRAVE, 3, 7, 4, 6),
+   MAP2(KEY_LEFTBRACE, 3, 7, 6, 2),
+   MAP2(KEY_RIGHTBRACE, 3, 7, 2, 2),
+   MAP2(KEY_SLASH, 3, 7, 5, 0),
+   MAP2(KEY_APOSTROPHE, 3, 7, 1, 0),
+   MAP2(KEY_MINUS, 3, 2, 3, 4),
    LAST_MAP_ENTRY
   };
 
@@ -177,7 +210,7 @@ set_bit(BIT_ARRAY* bits, uint8_t row, uint8_t column) {
 }
 
 key_map_t*
-find_in_map(uint8_t input_code, key_map_t* map) {
+find_in_map(uint8_t input_code, key_map_t map[]) {
   for (int i = 0; map[i].input_code; i++) {
     if (map[i].input_code == input_code) {
       return &(map[i]);
@@ -208,9 +241,9 @@ map_modifiers(BIT_ARRAY* bits, uint8_t modifier_mask)
 }
 
 void
-map_key(BIT_ARRAY* bits, uint8_t code) {
+map_key(BIT_ARRAY* bits, uint8_t code, key_map_t map[]) {
   if (code > 1) {
-    map_code(bits, code, key_map);
+    map_code(bits, code, map);
   }
 }
 
@@ -275,9 +308,18 @@ processReport(USB_KeyboardReport_Data_t* keyboard_report, BIT_ARRAY* old_state) 
   bit_array_clear_all(new_state);
   bit_index_t next_bit_set = 0;
 
-  map_modifiers(new_state, keyboard_report->Modifier);
-  for (int i = 0; i < 6; i++) {
-    map_key(new_state, keyboard_report->KeyCode[i]);
+  // First attempt to map shifted keys - If one of those is found, we
+  // don't consult the other maps.
+  if (keyboard_report->Modifier & (KEY_MOD_LSHIFT | KEY_MOD_RSHIFT)) {
+    for (int i = 0; i < 6; i++) {
+      map_key(new_state, keyboard_report->KeyCode[i], shift_key_map);
+    }
+  }
+  if (bit_array_num_bits_set(new_state) == 0) {
+    map_modifiers(new_state, keyboard_report->Modifier);
+    for (int i = 0; i < 6; i++) {
+      map_key(new_state, keyboard_report->KeyCode[i], key_map);
+    }
   }
 
   bit_array_or(old_state, old_state, new_state);
