@@ -54,12 +54,29 @@
 #include <LUFA/Drivers/Peripheral/Serial.h>
 #include <LUFA/Platform/Platform.h>
 
-#include "ConfigDescriptor.h"
-
 #include "usb_hid_keys.h"
 #include "bit_array.h"
 
-#include "main.h"
+// USB configuration
+
+/** HID Report Descriptor Usage Page value for a desktop keyboard. */
+#define USAGE_PAGE_KEYBOARD      0x07
+
+USB_ClassInfo_HID_Host_t Keyboard_HID_Interface =
+  {
+   .Config = {
+              .DataINPipe = {
+                             .Address = (PIPE_DIR_IN  | 1),
+                             .Banks = 1,
+                             },
+              .DataOUTPipe = {
+                              .Address        = (PIPE_DIR_OUT | 2),
+                              .Banks          = 1,
+                              },
+              .HIDInterfaceProtocol = HID_CSCP_KeyboardBootProtocol
+              },
+  };
+
 
 // MT093 hardware interface
 
@@ -282,30 +299,11 @@ processReport(USB_KeyboardReport_Data_t* keyboard_report, BIT_ARRAY* old_state) 
 // Read the keyboard USB report and process the information
 void processKeyboard(BIT_ARRAY* old_state)
 {
-  // Only process the keyboard if it is attached to the USB port
-  if (USB_HostState != HOST_STATE_Configured) {
-    return;
-  }
+  if ((USB_HostState == HOST_STATE_Configured)
+      && HID_Host_IsReportReceived(&Keyboard_HID_Interface)) {
 
-  // Select keyboard data pipe
-  Pipe_SelectPipe(KEYBOARD_DATA_IN_PIPE);
-
-  // Unfreeze keyboard data pipe
-  Pipe_Unfreeze();
-
-  // Has a packet arrived from the USB device?
-  if (!(Pipe_IsINReceived())) {
-    // Nothing received, exit...
-    Pipe_Freeze();
-    return;
-  }
-
-  // Ensure pipe is in the correct state before reading
-  if (Pipe_IsReadWriteAllowed()) {
     USB_KeyboardReport_Data_t keyboard_report;
-
-    // Read in keyboard report data
-    Pipe_Read_Stream_LE(&keyboard_report, sizeof(keyboard_report), NULL);
+    HID_Host_ReceiveReport(&Keyboard_HID_Interface, &keyboard_report);
 
     printf_P(PSTR("Mod 0x%02x Keys 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\r\n"),
              keyboard_report.Modifier,
@@ -314,12 +312,6 @@ void processKeyboard(BIT_ARRAY* old_state)
 
     processReport(&keyboard_report, old_state);
   }
-
-  // Clear the IN endpoint, ready for next data packet
-  Pipe_ClearIN();
-
-  // Refreeze keyboard data pipe
-  Pipe_Freeze();
 }
 
 // LUFA event handlers ------------------------------------------------------------------------------------------------
@@ -340,57 +332,41 @@ void EVENT_USB_Host_DeviceUnattached(void)
 
 // Event handler for the USB_DeviceEnumerationComplete event. This indicates that a device has been successfully
 // enumerated by the host and is now ready to be used by the application.
-void EVENT_USB_Host_DeviceEnumerationComplete(void)
+void
+EVENT_USB_Host_DeviceEnumerationComplete(void)
 {
-  puts_P(PSTR("Getting configuration data from device...\r\n"));
+  uint16_t ConfigDescriptorSize;
+  uint8_t  ConfigDescriptorData[512];
 
-  uint8_t ErrorCode;
-
-  /* Get and process the configuration descriptor data */
-  if ((ErrorCode = ProcessConfigurationDescriptor()) != SuccessfulConfigRead) {
-    if (ErrorCode == ControlError) {
-      puts_P(PSTR(ESC_FG_RED "Control Error (Get configuration)!\r\n"));
-     } else {
-      puts_P(PSTR(ESC_FG_RED "Invalid Device!\r\n"));
-    }
-
-    printf_P(PSTR(" -- Error Code: %d\r\n" ESC_FG_WHITE), ErrorCode);
+  if (USB_Host_GetDeviceConfigDescriptor(1, &ConfigDescriptorSize, ConfigDescriptorData,
+                                         sizeof(ConfigDescriptorData)) != HOST_GETCONFIG_Successful) {
+    puts_P(PSTR("Error Retrieving Configuration Descriptor.\r\n"));
     return;
   }
 
-  // Set the device configuration to the first configuration (rarely do devices use multiple configurations)
-  if ((ErrorCode = USB_Host_SetDeviceConfiguration(1)) != HOST_SENDCONTROL_Successful) {
-    printf_P(PSTR(ESC_FG_RED "Control Error (Set configuration)!\r\n"
-                  " -- Error Code: %d\r\n" ESC_FG_WHITE), ErrorCode);
+  if (HID_Host_ConfigurePipes(&Keyboard_HID_Interface,
+                              ConfigDescriptorSize, ConfigDescriptorData) != HID_ENUMERROR_NoError) {
+    puts_P(PSTR("Attached Device Not a Valid Keyboard.\r\n"));
     return;
   }
 
-  // HID class request to set the keyboard protocol to the Boot Protocol
-  USB_ControlRequest = (USB_Request_Header_t) {
-                                               .bmRequestType = (REQDIR_HOSTTODEVICE | REQTYPE_CLASS | REQREC_INTERFACE),
-                                               .bRequest      = HID_REQ_SetProtocol,
-                                               .wValue        = 0,
-                                               .wIndex        = 0,
-                                               .wLength       = 0,
-  };
+  if (USB_Host_SetDeviceConfiguration(1) != HOST_SENDCONTROL_Successful) {
+    puts_P(PSTR("Error Setting Device Configuration.\r\n"));
+    return;
+  }
 
-  // Select the control pipe for the request transfer
-  Pipe_SelectPipe(PIPE_CONTROLPIPE);
-
-  // Send the request, display error and wait for device detach if request fails
-  if ((ErrorCode = USB_Host_SendControlRequest(NULL)) != HOST_SENDCONTROL_Successful) {
-    printf_P(PSTR(ESC_FG_RED "Control Error (Set protocol)!\r\n"
-                  " -- Error Code: %d\r\n" ESC_FG_WHITE), ErrorCode);
-
+  if (HID_Host_SetBootProtocol(&Keyboard_HID_Interface) != 0) {
+    puts_P(PSTR("Could not Set Boot Protocol Mode.\r\n"));
     USB_Host_SetDeviceConfiguration(0);
     return;
   }
 
-  puts_P(PSTR("USB keyboard enumeration successful\r\n"));
+  puts_P(PSTR("Keyboard successfully.\r\n"));
 }
 
 // Event handler for the USB_HostError event. This indicates that a hardware error occurred while in host mode.
-void EVENT_USB_Host_HostError(const uint8_t ErrorCode)
+void
+EVENT_USB_Host_HostError(const uint8_t ErrorCode)
 {
   USB_Disable();
 
@@ -402,7 +378,8 @@ void EVENT_USB_Host_HostError(const uint8_t ErrorCode)
 
 // Event handler for the USB_DeviceEnumerationFailed event. This indicates that a problem occurred while
 // enumerating an attached USB device.
-void EVENT_USB_Host_DeviceEnumerationFailed(const uint8_t ErrorCode,
+void
+EVENT_USB_Host_DeviceEnumerationFailed(const uint8_t ErrorCode,
                                             const uint8_t SubErrorCode)
 {
   printf_P(PSTR(ESC_FG_RED "Device Enumeration Error!\r\n"
@@ -411,8 +388,19 @@ void EVENT_USB_Host_DeviceEnumerationFailed(const uint8_t ErrorCode,
                 " -- In State %d\r\n" ESC_FG_WHITE), ErrorCode, SubErrorCode, USB_HostState);
 }
 
+bool
+CALLBACK_HIDParser_FilterHIDReportItem(HID_ReportItem_t* const CurrentItem)
+{
+	/* Check the attributes of the current item - see if we are interested in it or not;
+	 * only store KEYBOARD usage page items into the Processed HID Report structure to
+	 * save RAM and ignore the rest
+	 */
+	return (CurrentItem->Attributes.Usage.Page == USAGE_PAGE_KEYBOARD);
+}
+
 // Main function
-int main(void)
+int
+main(void)
 {
   BIT_ARRAY* keyboard_state = bit_array_create(MATRIX_COUNT);
 

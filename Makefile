@@ -1,6 +1,8 @@
 CC=avr-gcc
 OBJCOPY=avr-objcopy
-OBJS=	src/main.o src/ConfigDescriptor.o src/bit_array.o		\
+OBJS=	src/main.o src/bit_array.o					\
+	lufa-master/LUFA/Drivers/USB/Class/Host/HIDClassHost.o		\
+	lufa-master/LUFA/Drivers/USB/Class/Common/HIDParser.o		\
 	lufa-master/LUFA/Drivers/USB/Core/USBTask.o			\
 	lufa-master/LUFA/Drivers/USB/Core/AVR8/USBController_AVR8.o	\
 	lufa-master/LUFA/Drivers/USB/Core/AVR8/USBInterrupt_AVR8.o	\
