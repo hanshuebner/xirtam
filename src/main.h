@@ -28,21 +28,12 @@
 #ifndef _MAIN_H_
 #define _MAIN_H_
 
-#include "bit_array.h"
-
-// Function prototypes
-void initialiseHardware(void);
-void initialiseTimers(void);
-void processKeyboard(BIT_ARRAY* old_state);
-
 // USB callback event handlers (LUFA)
 void EVENT_USB_Host_HostError(const uint8_t ErrorCode);
 void EVENT_USB_Host_DeviceAttached(void);
 void EVENT_USB_Host_DeviceUnattached(void);
 void EVENT_USB_Host_DeviceEnumerationFailed(const uint8_t ErrorCode, const uint8_t SubErrorCode);
 void EVENT_USB_Host_DeviceEnumerationComplete(void);
-
-void ReadNextReport(void);
 
 #endif
 

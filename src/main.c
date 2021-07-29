@@ -57,6 +57,8 @@
 #include "ConfigDescriptor.h"
 
 #include "usb_hid_keys.h"
+#include "bit_array.h"
+
 #include "main.h"
 
 // MT093 hardware interface
@@ -175,7 +177,7 @@ map_code(BIT_ARRAY* bits, uint8_t code, key_map_t map[])
     set_bit(bits, map_entry->matrix_address1.row, map_entry->matrix_address1.column);
     set_bit(bits, map_entry->matrix_address2.row, map_entry->matrix_address2.column);
   }
-}  
+}
 
 void
 map_modifiers(BIT_ARRAY* bits, uint8_t modifier_mask)
@@ -192,29 +194,6 @@ void
 map_key(BIT_ARRAY* bits, uint8_t code) {
   if (code > 1) {
     map_code(bits, code, key_map);
-  }
-}
-
-// Main function
-int main(void)
-{
-  BIT_ARRAY* keyboard_state = bit_array_create(MATRIX_COUNT);
-
-  bit_array_clear_all(keyboard_state);
-
-  // Initialise the hardware
-  initialiseHardware();
-	
-  // Enable interrupts (required for USB support and quadrature output ISRs)
-  sei();
-	
-  // Main processing loop
-  while(1) {
-    // Perform any pending keyboard actions
-    processKeyboard(keyboard_state);
-
-    // Process the USB host interface
-    USB_USBTask();
   }
 }
 
@@ -238,7 +217,7 @@ void initialiseHardware(void)
 
   // Initialise the LUFA USB stack
   USB_Init();
-	
+
   // By default, xirtam will output USB debug events on the
   // AVR's UART port.  You can monitor the debug console by
   // connecting a serial to USB adapter.  Only the Tx (D3 and 0V
@@ -266,6 +245,10 @@ matrix_set(uint8_t row, uint8_t column, uint8_t value) {
   }
   PORTD |= BIT_STROBE;
   PORTD &= ~BIT_STROBE;
+
+  // Reset output ports for easier debugging
+  PORTD &= ~BIT_DATA;
+  PORTC = 0;
 }
 
 void
@@ -302,7 +285,7 @@ void processKeyboard(BIT_ARRAY* old_state)
   if (USB_HostState != HOST_STATE_Configured) {
     return;
   }
-	
+
   // Select keyboard data pipe
   Pipe_SelectPipe(KEYBOARD_DATA_IN_PIPE);
 
@@ -319,7 +302,7 @@ void processKeyboard(BIT_ARRAY* old_state)
   // Ensure pipe is in the correct state before reading
   if (Pipe_IsReadWriteAllowed()) {
     USB_KeyboardReport_Data_t keyboard_report;
-		
+
     // Read in keyboard report data
     Pipe_Read_Stream_LE(&keyboard_report, sizeof(keyboard_report), NULL);
 
@@ -380,7 +363,7 @@ void EVENT_USB_Host_DeviceEnumerationComplete(void)
                   " -- Error Code: %d\r\n" ESC_FG_WHITE), ErrorCode);
     return;
   }
-	
+
   // HID class request to set the keyboard protocol to the Boot Protocol
   USB_ControlRequest = (USB_Request_Header_t) {
                                                .bmRequestType = (REQDIR_HOSTTODEVICE | REQTYPE_CLASS | REQREC_INTERFACE),
@@ -427,4 +410,26 @@ void EVENT_USB_Host_DeviceEnumerationFailed(const uint8_t ErrorCode,
                 " -- In State %d\r\n" ESC_FG_WHITE), ErrorCode, SubErrorCode, USB_HostState);
 }
 
+// Main function
+int main(void)
+{
+  BIT_ARRAY* keyboard_state = bit_array_create(MATRIX_COUNT);
+
+  bit_array_clear_all(keyboard_state);
+
+  // Initialise the hardware
+  initialiseHardware();
+
+  // Enable interrupts (required for USB support and quadrature output ISRs)
+  sei();
+
+  // Main processing loop
+  while(1) {
+    // Perform any pending keyboard actions
+    processKeyboard(keyboard_state);
+
+    // Process the USB host interface
+    USB_USBTask();
+  }
+}
 
