@@ -1,3 +1,4 @@
 (sym_lib_table
   (lib (name xirtam-rescue)(type Legacy)(uri ${KIPRJMOD}/xirtam-rescue.lib)(options "")(descr ""))
+  (lib (name matrixinterconnectmatrix)(type Legacy)(uri /Users/hans/Downloads/matrixinterconnectmatrix.lib)(options "")(descr ""))
 )
